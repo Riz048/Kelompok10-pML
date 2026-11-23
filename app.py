@@ -1,41 +1,24 @@
-import gradio as gr
 import joblib
 import pandas as pd
+import streamlit as st
 
 model = joblib.load("best_model.pkl")
 scaler = joblib.load("scaler.pkl")
 segmen = pd.read_csv("segmen.csv", index_col=0)
 
+st.title("Segmentasi Pelanggan Toko")
+st.write("K-Means Clustering (K=5) berdasarkan Annual Income dan Spending Score.")
 
-def prediksi(income, spending):
+income = st.number_input("Annual Income (k$)", min_value=0, value=60)
+spending = st.slider("Spending Score (1-100)", 1, 100, 50)
+
+if st.button("Prediksi"):
     X = pd.DataFrame(
         [[income, spending]],
         columns=["Annual Income (k$)", "Spending Score (1-100)"]
     )
     cluster = int(model.predict(scaler.transform(X))[0])
 
-    return (
-        f"Cluster {cluster}",
-        segmen.loc[cluster, "Karakteristik"],
-        segmen.loc[cluster, "Strategi Pemasaran"],
-    )
-
-
-demo = gr.Interface(
-    fn=prediksi,
-    inputs=[
-        gr.Number(label="Annual Income (k$)", value=60, minimum=0),
-        gr.Slider(1, 100, step=1, value=50, label="Spending Score (1-100)"),
-    ],
-    outputs=[
-        gr.Textbox(label="Cluster"),
-        gr.Textbox(label="Karakteristik"),
-        gr.Textbox(label="Strategi Pemasaran"),
-    ],
-    title="Segmentasi Pelanggan Toko",
-    description="K-Means Clustering (K=5) berdasarkan Annual Income dan Spending Score.",
-    examples=[[20, 80], [20, 10], [55, 50], [90, 85], [90, 15]],
-)
-
-if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    st.subheader(f"Cluster {cluster}")
+    st.write(f"**Karakteristik:** {segmen.loc[cluster, 'Karakteristik']}")
+    st.write(f"**Strategi Pemasaran:** {segmen.loc[cluster, 'Strategi Pemasaran']}")
